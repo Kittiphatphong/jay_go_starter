@@ -41,8 +41,16 @@ func CallApi(queryUrl string, request interface{}) ([]byte, error) {
 		logs.Error(err)
 		return nil, err
 	}
-	logs.Error(catchErr["error"].(string))
-	return nil, errors.New(catchErr["error"].(string))
+	if catchErr["error"] != nil {
+		logs.Error(catchErr["error"].(string))
+		return nil, errors.New(catchErr["error"].(string))
+	}
+	if catchErr["description"] != nil {
+		logs.Error(catchErr["description"].(string))
+		return nil, errors.New(catchErr["description"].(string))
+	}
+
+	return nil, errors.New("CALL_API_ERROR")
 
 }
 
@@ -92,7 +100,15 @@ func CallApiIpro(queryUrl string, request interface{}) ([]byte, error) {
 		logs.Error(err)
 		return nil, err
 	}
-	logs.Error(catchErr["error"].(string))
-	return nil, errors.New(catchErr["error"].(string))
+	if catchErr["error"] != nil {
+		logs.Error(catchErr["error"].(string))
+		return nil, errors.New(catchErr["error"].(string))
+	}
+	if catchErr["description"] != nil {
+		logs.Error(catchErr["description"].(string))
+		return nil, errors.New(catchErr["description"].(string))
+	}
+
+	return nil, errors.New("CALL_API_ERROR")
 
 }
