@@ -11,3 +11,7 @@ postgres:
 redis:
   host: localhost
   port: 6379
+
+auth:
+  secretWeb: your-web-jwt-secret
+  secretApi: your-api-jwt-secret
