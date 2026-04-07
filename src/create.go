@@ -9,6 +9,13 @@ import (
 	"strings"
 )
 
+func toUpperCamel(filename string) string {
+	return strings.Replace(
+		cases.Title(language.Und, cases.NoLower).String(
+			strings.Replace(filename, "_", " ", -1)),
+		" ", "", -1)
+}
+
 func main() {
 
 	if len(os.Args) != 2 {
@@ -23,7 +30,9 @@ func main() {
 	CreateRepositories(filename)
 	CreateServices(filename)
 	CreateControllers(filename)
-
+	UpdateApiRoutes(filename)
+	UpdateWebRoutes(filename)
+	UpdateMain(filename)
 }
 
 func CreateRequests(filename string) {
@@ -358,4 +367,146 @@ func CreateControllers(filename string) {
 	}
 
 	fmt.Println("Created Controller successfully", file)
+}
+
+func UpdateApiRoutes(filename string) {
+	file := "routes/api_routes.go"
+	content, err := os.ReadFile(file)
+	if err != nil {
+		fmt.Println("Could not read", file, err)
+		return
+	}
+
+	upperString := toUpperCamel(filename)
+	text := string(content)
+	fieldName := "controller" + upperString
+
+	if strings.Contains(text, fieldName) {
+		fmt.Println("Already exists in", file)
+		return
+	}
+
+	projectName := "go_starter"
+
+	if !strings.Contains(text, fmt.Sprintf(`"%s/controllers"`, projectName)) {
+		text = strings.Replace(text,
+			fmt.Sprintf(`"%s/controllers/api"`, projectName),
+			fmt.Sprintf("\"%s/controllers/api\"\n\t\"%s/controllers\"", projectName, projectName),
+			1)
+	}
+
+	text = strings.Replace(text,
+		"}\n\nfunc (",
+		fmt.Sprintf("\t%s controllers.%sController\n}\n\nfunc (", fieldName, upperString),
+		1)
+
+	text = strings.Replace(text,
+		"\t//controller\n) Routes {",
+		fmt.Sprintf("\t%s controllers.%sController,\n\t//controller\n) Routes {", fieldName, upperString),
+		1)
+
+	text = strings.Replace(text,
+		"\t\t//controller\n\t}",
+		fmt.Sprintf("\t\t%s: %s,\n\t\t//controller\n\t}", fieldName, fieldName),
+		1)
+
+	err = os.WriteFile(file, []byte(text), 0644)
+	if err != nil {
+		fmt.Println("Could not write", file, err)
+		return
+	}
+
+	fmt.Println("Updated", file, "successfully")
+}
+
+func UpdateWebRoutes(filename string) {
+	file := "routes/web_routes.go"
+	content, err := os.ReadFile(file)
+	if err != nil {
+		fmt.Println("Could not read", file, err)
+		return
+	}
+
+	upperString := toUpperCamel(filename)
+	text := string(content)
+	fieldName := "controller" + upperString
+
+	if strings.Contains(text, fieldName) {
+		fmt.Println("Already exists in", file)
+		return
+	}
+
+	projectName := "go_starter"
+
+	if !strings.Contains(text, fmt.Sprintf(`"%s/controllers"`, projectName)) {
+		text = strings.Replace(text,
+			"\"github.com/gofiber/fiber/v2\"",
+			fmt.Sprintf("\"github.com/gofiber/fiber/v2\"\n\t\"%s/controllers\"", projectName),
+			1)
+	}
+
+	text = strings.Replace(text,
+		"}\n\nfunc (",
+		fmt.Sprintf("\t%s controllers.%sController\n}\n\nfunc (", fieldName, upperString),
+		1)
+
+	text = strings.Replace(text,
+		"\t//controller\n) Routes {",
+		fmt.Sprintf("\t%s controllers.%sController,\n\t//controller\n) Routes {", fieldName, upperString),
+		1)
+
+	text = strings.Replace(text,
+		"\t\t//controller\n\t}",
+		fmt.Sprintf("\t\t%s: %s,\n\t\t//controller\n\t}", fieldName, fieldName),
+		1)
+
+	err = os.WriteFile(file, []byte(text), 0644)
+	if err != nil {
+		fmt.Println("Could not write", file, err)
+		return
+	}
+
+	fmt.Println("Updated", file, "successfully")
+}
+
+func UpdateMain(filename string) {
+	file := "main.go"
+	content, err := os.ReadFile(file)
+	if err != nil {
+		fmt.Println("Could not read", file, err)
+		return
+	}
+
+	upperString := toUpperCamel(filename)
+	text := string(content)
+	varName := "newController" + upperString
+
+	if strings.Contains(text, varName) {
+		fmt.Println("Already exists in", file)
+		return
+	}
+
+	serviceBlock := fmt.Sprintf(
+		"\t//%s service\n"+
+			"\tnewRepository%s := repositories.New%sRepository(postgresConnection)\n"+
+			"\tnewService%s := services.New%sService(newRepository%s)\n"+
+			"\tnewController%s := controllers.New%sController(newService%s)\n"+
+			"\n\t//connect route",
+		filename, upperString, upperString,
+		upperString, upperString, upperString,
+		upperString, upperString, upperString)
+
+	text = strings.Replace(text, "\t//connect route", serviceBlock, 1)
+
+	text = strings.ReplaceAll(text,
+		"\t\t//new web controller",
+		fmt.Sprintf("\t\t%s,\n\t\t//new web controller", varName))
+
+	err = os.WriteFile(file, []byte(text), 0644)
+	if err != nil {
+		fmt.Println("Could not write", file, err)
+		return
+	}
+
+	fmt.Println("Updated", file, "successfully")
 }
